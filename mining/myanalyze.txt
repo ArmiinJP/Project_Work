@@ -1,0 +1,94 @@
+select min(dest_wallet_id), max(dest_wallet_id) from data_dataset
+
+
+(select dest_wallet_id, count(dest_wallet_id) tedad from data_dataset group by dest_wallet_id order by tedad desc 
+از هر dest_wallet_id چه تعداد نمونه‌ی مشابه داریم.
+
+select count(*) from (select dest_wallet_id, count(dest_wallet_id) tedad from data_dataset group by dest_wallet_id order by tedad desc ) as c 
+330,585 مقدار dest_wallet_id متمایز داریم
+
+
+
+ابتدا بررسی wallet_nickname: 
+از جهت null بودن و نبودن
+select count(*), 'wallet_nickname is null' from data_dataset where wallet_nickname is null
+union
+select count(*), 'wallet_nickname is not null' from data_dataset where wallet_nickname is not null
+از جهت null نبودن:
+کلا 109033 تا wallet_nickname منحصر به فرد داریم.
+select count(*) from(select distinct wallet_nickname from data_dataset  where wallet_nickname is not null) as t
+که تعداد هر کدام از wallet_nickname ها
+select wallet_nickname, count(*) tedad from data_dataset where wallet_nickname is not null group by wallet_nickname order by tedad desc
+توزیع تعداد wallet_nickname ها، در واقع ما در مثال بالا فهمیدیم مثلا یک wallet_nickname خاص، پنج بار تکرار شده، حالا میخوایم ببینیم چند تا wallet nickname داریم که پنج بار تکرار شدند:
+select  count(*) ta_wallet_nickname, tedad bar_tekrar_shodan from (select wallet_nickname, count(*) tedad from data_dataset where wallet_nickname is not null group by wallet_nickname order by tedad) as t group by tedad
+تقریبا 91 درصد از wallet_nickname کمتر از 5 بار تکرار شدند و 66 درصد از wallet_nickname ها تنها یکبار تکرار شدند.
+select sum(ta_wallet_nickname)/(select count(*) from(select distinct wallet_nickname from data_dataset  where wallet_nickname is not null) as t) from(
+select  count(*) ta_wallet_nickname, tedad bar_tekrar_shodan from (select wallet_nickname, count(*) tedad from data_dataset where wallet_nickname is not null group by wallet_nickname order by tedad) as t group by tedad) as b
+where b.bar_tekrar_shodan < 5
+بیشترین wallet_nickname تکرار شده به همراه تعداد تکرار:
+select wallet_nickname, tedad from (select wallet_nickname, count(*) tedad from data_dataset 
+where wallet_nickname is not null
+group by wallet_nickname) as d natural join (select max(bar_tekrar_shodan) tedad from(select  count(*) ta_wallet_nickname, tedad bar_tekrar_shodan from (select wallet_nickname, count(*) tedad from data_dataset where wallet_nickname is not null group by wallet_nickname order by tedad) as t group by tedad) as b) as c
+
+ترکیب بیشترین wallet_nickname و dest_wallet_id ما را به جای خاصی نکشوند
+
+ترکیب wallet_nick_name هایی که کمتر از 5 بار تکرار شدند با dest_wallet_id ما را به دو dest_wallet_id میرساند، که تراکنش های بالایی را از خود ثبت کردند:
+
+select dest_wallet_id, count(*) tedad from data_dataset 
+where wallet_nickname in (select wallet_nickname from (select wallet_nickname, count(*) tedad from data_dataset where wallet_nickname is not null group by wallet_nickname order by tedad) as t where tedad < 5)
+group by dest_wallet_id
+order by tedad desc
+
+
+
+
+خب
+select count(*), 'wallet_nickname is null and not null' from(
+select distinct dest_wallet_id from data_dataset where wallet_nickname is null
+intersect all
+select distinct dest_wallet_id from data_dataset where wallet_nickname is not null) as t
+union
+select count(*), 'wallet_nickname is null ' from(
+select distinct dest_wallet_id from data_dataset where wallet_nickname is null
+except all
+select distinct dest_wallet_id from data_dataset where wallet_nickname is not null) as t
+union
+select count(*), 'wallet_nickname is not null ' from(
+select distinct dest_wallet_id from data_dataset where wallet_nickname is not null
+except all
+select distinct dest_wallet_id from data_dataset where wallet_nickname is null) as t
+
+ما 330585 تا dest_wallet_id متمایز داریم.
+می‌توان dest_wallet_id را بر اساس wallet_nickname  به سه دسته تقسیم کرد.
+دسته‌ی اول: dest_wallet_id هایی که wallet_nickname های آنها null هست حدود 77.3
+دسته‌ی دوم: dest_wallet_id هایی که wallet_nickname های آنها  not null هست حدود 14.3
+دسته‌ی سوم: dest_wallet_id هایی که  wallet_nickname های آنها هم null هست هم not null حدود 8.4
+
+
+ما باید به یک فیچر و یک چیز مشخص و خوبی که تمایز خوبی ایجاد میکنه در اون عنصری که براساسش دسته بندی میکنیم برسیم
+بعدا ترکیبش کنیم با این wallet_nickname
+
+
+-- select * from (select dest_wallet_id, count(*) as t from data_dataset
+-- where wallet_nickname is null
+-- group by dest_wallet_id
+-- ) as tt where tt.t > 200
+
+
+
+-- select * from data_dataset
+-- --where dest_wallet_id=28136114
+-- where transaction_type_chain ~~ '_17s%'
+
+-- select sum(c.tedad)
+-- from (select dest_wallet_id, count(dest_wallet_id) tedad from data_dataset group by dest_wallet_id) as c
+
+
+--select c.tedad, count(c.tedad) from (select dest_wallet_id, count(dest_wallet_id) tedad from data_dataset group by dest_wallet_id order by tedad desc ) as c group by c.tedad order by count(c.tedad) desc
+select  from (select dest_wallet_id, count(dest_wallet_id) tedad from data_dataset group by dest_wallet_id order by tedad desc ) as c
+
+
+
+--select dest_wallet_id, count(dest_wallet_id) tedad from data_dataset group by dest_wallet_id order by tedad desc
+
+--select count(*) from data_dataset where dest_wallet_id=134744072
