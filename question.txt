@@ -1,0 +1,2 @@
+راه اندازی pgadmin
+https://www.commandprompt.com/education/how-to-install-pgadmin-on-ubuntu/
